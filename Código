@@ -1,0 +1,83 @@
+Configurar o ESP8266 para se conectar à rede Wi-Fi local.
+
+Configurar o módulo ESP8266 para receber mensagens do WhatsApp através do protocolo MQTT.
+
+Configurar um servidor MQTT externo para intermediar a comunicação entre o WhatsApp e o ESP8266.
+
+Escrever um código que processa as mensagens recebidas pelo ESP8266 e envia uma resposta automática.
+
+#include <ESP8266WiFi.h>
+#include <PubSubClient.h>
+
+// Definir as credenciais da rede WiFi local
+const char* ssid = "NOME_DA_REDE";
+const char* password = "SENHA_DA_REDE";
+
+// Definir as credenciais do broker MQTT
+const char* mqtt_server = "BROKER_MQTT";
+const char* mqtt_username = "USUARIO_MQTT";
+const char* mqtt_password = "SENHA_MQTT";
+const char* mqtt_topic = "TOPICO_MQTT";
+
+// Inicializar o cliente WiFi e o client MQTT
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+void setup() {
+  // Inicializar a comunicação serial
+  Serial.begin(115200);
+
+  // Conectar ao WiFi local
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Conectando ao WiFi...");
+  }
+
+  // Configurar o cliente MQTT
+  client.setServer(mqtt_server, 1883);
+  client.setCallback(callback);
+
+  // Conectar ao broker MQTT
+  while (!client.connected()) {
+    Serial.println("Conectando ao broker MQTT...");
+    if (client.connect("ESP8266Client", mqtt_username, mqtt_password)) {
+      Serial.println("Conectado ao broker MQTT!");
+      client.subscribe(mqtt_topic);
+    } else {
+      Serial.print("Falha na conexão com o broker MQTT, rc=");
+      Serial.println(client.state());
+      delay(5000);
+    }
+  }
+}
+
+void loop() {
+  // Verificar se há mensagens novas no tópico MQTT
+  client.loop();
+}
+
+// Função de callback para processar as mensagens recebidas no tópico MQTT
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Mensagem recebida [");
+  Serial.print(topic);
+  Serial.print("] ");
+  
+  // Converter a mensagem recebida em uma string
+  String message = "";
+  for (int i = 0; i < length; i++) {
+    message += (char)payload[i];
+  }
+
+  // Verificar se a mensagem recebida é do WhatsApp
+  if (topic == "whatsapp") {
+    // Processar a mensagem e enviar uma resposta automática
+    String response = processMessage(message);
+    client.publish(mqtt_topic, response.c_str());
+  }
+}
+
+// Função para processar a mensagem recebida e gerar uma resposta automática
+String processMessage(String message) {
+  // Implementar o código para processar a mensagem e gerar uma resposta automática
+  // Aqui
